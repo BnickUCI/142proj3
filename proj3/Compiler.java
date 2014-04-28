@@ -1,5 +1,4 @@
 package crux;
-import crux.Parser;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
@@ -7,8 +6,8 @@ import java.io.PrintStream;
 
 public class Compiler {
     public static String studentName = "Nicholas Bennett";
-    public static String studentID = "76237804";
-    public static String uciNetID = "nrbennet";
+    public static String studentID = "TODO: 76237804";
+    public static String uciNetID = "TODO: nrbennet";
     
     public static void main(String[] args)
     {

@@ -1,87 +1,47 @@
 package crux;
-import crux.NonTerminal;
 
-import java.io.FileNotFoundException;
-import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Stack;
 
 public class Parser {
     public static String studentName = "Nicholas Bennett";
-    public static String studentID = "TODO: 76237804";
-    public static String uciNetID = "TODO: nrbennet";
+    public static String studentID = "76237804";
+    public static String uciNetID = "nrbennet";
     
-    
-	// Necessary Variables for Parser Constructor.
-	private Scanner scanner;
-	private Token currentToken;
-	
-	
-//	// Symbol Table overhead
-	public LinkedList<SymbolTable> rootNode = null;
-	public SymbolTable globalSymTable = null;
-	public int countId = 0; 
-	public int currentScope;
-	
-   
-    //  Parser Constructor
-	// 
-	//  Description:  Stores the passed Scanner object in a private variable
-	// ==========================================================================================================
-	public Parser(Scanner scanner)
-	{		
-		this.scanner = scanner;
-		currentToken = scanner.getNextToken();
-	}// end of "Parser"
-	// ==========================================================================================================
-   
-	
-	// SymbolTable Management ==========================
+// SymbolTable Management ==========================
     private SymbolTable symbolTable;
+    private int recursiveCounter; 
+    private SymbolTable head; 
+    private SymbolTable currentSymTable;
     
-    // initialize local global Linkedlist to store symbol tables
+    
     private void initSymbolTable()
     {
-    	globalSymTable = new SymbolTable(0); 
-    	rootNode = new LinkedList<SymbolTable>();
-    	initCruxFunctions();
+    	// declare new symbol table object
+        symbolTable = new SymbolTable(0);
+        recursiveCounter++;
+        head = symbolTable;
+        currentSymTable = symbolTable;
     }
     
-    
-    // Need a global lookup function that checks all the outer scopes to make sure
-    //		a variable has been used. 
-    private void lookup(String name){
-    	
-    }
-    
-    
-    
-    //Description: need to add global function variables 
-    private void initCruxFunctions() {
-		globalSymTable.insert("readInt");
-		globalSymTable.insert("readFloat");
-		globalSymTable.insert("printBool");
-		globalSymTable.insert("printInt");
-		globalSymTable.insert("printFloat");
-		globalSymTable.insert("println");
-	}
-
-	private void enterScope()
+    private void enterScope()
     {
-		// so if we enter a new scope we need to add a table to the symbol table
-		SymbolTable st = new SymbolTable(countId);
-		currentScope = countId;
-		countId++;
-		// and we need to add it to the root node
-		rootNode.add(st);
+        // we need to add a new node to the list
+    	// so declare a new symbol table
+    	SymbolTable tempSymTable = new SymbolTable(recursiveCounter);
+    	recursiveCounter++;
+    	// now add it to the list 
+    	tempSymTable.setParent(currentSymTable);
+    	currentSymTable = tempSymTable;
     }
     
     private void exitScope()
     {
-    	currentScope--; 
+        // just need to move to the next node up the list
+    	// so follow parent node
+    	currentSymTable = currentSymTable.getParent(); 
+    	// I think garbage collection picks up the left behind node
     }
 
     private Symbol tryResolveSymbol(Token ident)
@@ -145,107 +105,132 @@ public class Parser {
         throw new QuitParseException(errorMessage);
         //return ErrorToken(errorMessage);
     }
+              
+    // Methods brought in from the original parser
+    //======================================================================================
+    //======================================================================================
+    //======================================================================================
+	// Error Reporting 
     
-	// Helper Methods ==========================================================================================
-	private boolean have(Token.Kind kind)
-	{
-		return currentToken.is(kind);
-	}
+	// Necessary Variables for Parser Constructor.
+	private Scanner scanner;
+	private Token currentToken;
+	
+	
+    //  Parser Constructor
+	// 
+	//  Description:  Stores the passed Scanner object in a private variable
+	// ==========================================================================================================
+	public Parser(Scanner scanner)
+	{		
+		recursiveCounter = 0;
+		this.scanner = scanner;
+		currentToken = scanner.getNextToken();
+	}// end of "Parser"
+	// ==========================================================================================================
+	private StringBuffer errorBuffer = new StringBuffer();
 
-	private boolean have(NonTerminal nt)
+	/*private String reportSyntaxError(NonTerminal nt)
+    {
+        //String message = "SyntaxError(" + lineNumber() + "," + charPosition() + ")[Expected a token from " + nt.name() + " but got " + currentToken.kind() + ".]";
+        errorBuffer.append(message + "\n");
+        return message;
+    }*/
+    private String reportSyntaxError(Token.Kind kind)
 	{
-		return nt.firstSet().contains(currentToken.getKind());
-	}
-
-	private boolean accept(Token.Kind kind)
-	{
-		if (have(kind)) {
-			currentToken = scanner.getNextToken();
-			return true;
-		}
-		return false;
-	}    
-
-	private boolean accept(NonTerminal nt)
-	{
-		if (have(nt)) {
-			currentToken = scanner.getNextToken();
-			return true;
-		}
-		return false;
-	}
-
-	private boolean expect(Token.Kind kind)
-	{
-		if (accept(kind))
-			return true;
-		String errorMessage = reportSyntaxError(kind);
-		throw new QuitParseException(errorMessage);
-		//return false;
-	}
-
-	private boolean expect(NonTerminal nt)
-	{
-		if (accept(nt))
-			return true;
-		String errorMessage = reportSyntaxError(nt);
-		throw new QuitParseException(errorMessage);
-		//return false;
+		String message = "SyntaxError(" + lineNumber() + "," + charPosition() + ")[Expected " + kind + " but got " + currentToken.getKind() + ".]";
+		errorBuffer.append(message + "\n");
+		return message;
 	}
 	
-	// Error Reporting ==========================================
-		private StringBuffer errorBuffer = new StringBuffer();
+	private String reportSyntaxError(NonTerminal nt)
+	{
+		String message = "SyntaxError(" + lineNumber() + "," + charPosition() + ")[Expected " + nt + " but got " + currentToken.getKind() + ".]";
+		errorBuffer.append(message + "\n");
+		return message;
+	}
 
-		/*private String reportSyntaxError(NonTerminal nt)
-	    {
-	        //String message = "SyntaxError(" + lineNumber() + "," + charPosition() + ")[Expected a token from " + nt.name() + " but got " + currentToken.kind() + ".]";
-	        errorBuffer.append(message + "\n");
-	        return message;
-	    }*/
+	public String errorReport()
+	{
+		return errorBuffer.toString();
+	}
+	
+	
+	public boolean hasError()
+	{
+		return errorBuffer.length() != 0;
+	}
 
-		private String reportSyntaxError(Token.Kind kind)
-		{
-			String message = "SyntaxError(" + lineNumber() + "," + charPosition() + ")[Expected " + kind + " but got " + currentToken.getKind() + ".]";
-			errorBuffer.append(message + "\n");
-			return message;
+	private class QuitParseException extends RuntimeException
+	{
+		private static final long serialVersionUID = 1L;
+		public QuitParseException(String errorMessage) {
+			super(errorMessage);
 		}
-		
-		private String reportSyntaxError(NonTerminal nt)
+	}
+
+	private int lineNumber()
+	{
+		return currentToken.lineNumber();
+	}
+
+	private int charPosition()
+	{
+		return currentToken.charPosition();
+	}
+	
+	// Helper Methods ==========================================================================================
+		private boolean have(Token.Kind kind)
 		{
-			String message = "SyntaxError(" + lineNumber() + "," + charPosition() + ")[Expected " + nt + " but got " + currentToken.getKind() + ".]";
-			errorBuffer.append(message + "\n");
-			return message;
+			return currentToken.is(kind);
 		}
 
-		public String errorReport()
+		private boolean have(NonTerminal nt)
 		{
-			return errorBuffer.toString();
-		}
-		
-		
-		public boolean hasError()
-		{
-			return errorBuffer.length() != 0;
+			return nt.firstSet().contains(currentToken.getKind());
 		}
 
-		private class QuitParseException extends RuntimeException
+		private boolean accept(Token.Kind kind)
 		{
-			private static final long serialVersionUID = 1L;
-			public QuitParseException(String errorMessage) {
-				super(errorMessage);
+			if (have(kind)) {
+				currentToken = scanner.getNextToken();
+				return true;
 			}
+			return false;
+		}    
+
+		private boolean accept(NonTerminal nt)
+		{
+			if (have(nt)) {
+				currentToken = scanner.getNextToken();
+				return true;
+			}
+			return false;
 		}
 
-		private int lineNumber()
+		private boolean expect(Token.Kind kind)
 		{
-			return currentToken.lineNumber();
+			if (accept(kind))
+				return true;
+			String errorMessage = reportSyntaxError(kind);
+			throw new QuitParseException(errorMessage);
+			//return false;
 		}
 
-		private int charPosition()
+		private boolean expect(NonTerminal nt)
 		{
-			return currentToken.charPosition();
+			if (accept(nt))
+				return true;
+			String errorMessage = reportSyntaxError(nt);
+			throw new QuitParseException(errorMessage);
+			//return false;
 		}
-              
+    
+    //======================================================================================
+    //======================================================================================
+	//======================================================================================
+    
+    
 // Parser ==========================================
     
     public void parse()
@@ -676,5 +661,6 @@ public class Parser {
 		expect(Token.Kind.CLOSE_BRACE);
 		exitScope();
 	}
-
+    
+    
 }
