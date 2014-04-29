@@ -86,6 +86,7 @@ public class SymbolTable {
     public Symbol insert(String name) throws RedeclarationError
     {
     	// scan local list for a redeclaration of symbol with same name
+    	//System.out.println("DEBUG: symTable for inner symTable" + symTable.toString());
     	for(Symbol s: this.symTable){
     		if(s.name().equals(name)){
     			throw new RedeclarationError(s);
@@ -100,9 +101,10 @@ public class SymbolTable {
     
     public String toString()
     {
+    	// Adds on parent tables
         StringBuffer sb = new StringBuffer();
-        if (this.parent!=null)
-            sb.append(parent.toString());
+//        if (this.parent!=null)
+//            sb.append(parent.toString());
         
         String indent = new String();
         for (int i = 0; i < depth; i++) {

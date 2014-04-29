@@ -34,20 +34,26 @@ public class Parser {
         // we need to add a new node to the list
     	// so declare a new symbol table
     	SymbolTable tempSymTable = new SymbolTable(recursiveCounter);
+    	//System.out.println(" Enter test currentSymTable : " + tempSymTable.toString());
+    
+    	
     	recursiveCounter++;
     	// now add it to the list 
     	tempSymTable.setParent(currentSymTable);
-    	System.out.println(" Enter test currentSymTable : " + currentSymTable.toString());
-    	System.out.println("recursiveCounter: " + recursiveCounter);
+    	//System.out.println(" Enter test currentSymTable : " + tempSymTable.toString());
+//    	System.out.println(" Enter test currentSymTable : " + currentSymTable.toString());
+    	//System.out.println("recursiveCounter: " + recursiveCounter);
     	currentSymTable = tempSymTable;
+    //	System.out.println(" Enter test currentSymTable : " + currentSymTable.toString());
     }
     
     private void exitScope()
     {
         // just need to move to the next node up the list
     	// so follow parent node
-    	System.out.println("Exit test currentSymTable : " + currentSymTable.toString());
-    	System.out.println("recursiveCounter: " + recursiveCounter);
+//    	System.out.println("Exit test currentSymTable : " + currentSymTable.toString());
+    	//System.out.println("recursiveCounter: " + recursiveCounter);
+    	recursiveCounter--;
     	currentSymTable = currentSymTable.getParent(); 
     	
     	// I think garbage collection picks up the left behind node
@@ -261,6 +267,7 @@ public class Parser {
 
     public void program()
     {
+    	
 		if(have(NonTerminal.DECLARATION_LIST)){
 			declarationList();
 		}
@@ -540,7 +547,13 @@ public class Parser {
 	// -------------------------------------------------------------------
 	public void functionDefinition() {
 		expectRetrieve(Token.Kind.FUNC);
+		
+		// I think enterscope needs to return the currentToken
+		//System.out.println("Before enter currentSymTable : " + currentSymTable.toString());
 		enterScope(); // experimental positioning
+		
+		
+		//System.out.println("After Exit test currentSymTable : " + currentSymTable.toString());
 		tempToken = expectRetrieve(Token.Kind.IDENTIFIER);
 		tempSymbol = tryDeclareSymbol(tempToken); 
 		//System.out.println("func-->returned " + tempSymbol.toString());
@@ -694,11 +707,11 @@ public class Parser {
 	// -------------------------------------------------------------------
 	public void statementBlock() {	
 		//if we are here we are in a new scope
-		//enterScope(); Wrong spot maybe
+		//enterScope(); // Wrong spot maybe
 		expectRetrieve(Token.Kind.OPEN_BRACE);
 		have(NonTerminal.STATEMENT_LIST);
 		statementList();
 		expectRetrieve(Token.Kind.CLOSE_BRACE);
-		//exitScope(); Wrong spot maybe
+		//exitScope(); //Wrong spot maybe
 	}
 }
