@@ -103,8 +103,8 @@ public class SymbolTable {
     {
     	// Adds on parent tables
         StringBuffer sb = new StringBuffer();
-//        if (this.parent!=null)
-//            sb.append(parent.toString());
+        if (this.parent!=null)
+            sb.append(parent.toString());
         
         String indent = new String();
         for (int i = 0; i < depth; i++) {

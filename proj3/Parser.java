@@ -85,7 +85,7 @@ public class Parser {
         assert(ident.is(Token.Kind.IDENTIFIER));
         String name = ident.lexeme();
         try {
-            return symbolTable.insert(name);
+            return currentSymTable.insert(name);
         } catch (RedeclarationError re) {
             String message = reportDeclareSymbolError(name, ident.lineNumber(), ident.charPosition());
             return new ErrorSymbol(message);
@@ -550,7 +550,7 @@ public class Parser {
 		
 		// I think enterscope needs to return the currentToken
 		//System.out.println("Before enter currentSymTable : " + currentSymTable.toString());
-		enterScope(); // experimental positioning
+		//enterScope(); // experimental positioning
 		
 		
 		//System.out.println("After Exit test currentSymTable : " + currentSymTable.toString());
@@ -559,6 +559,7 @@ public class Parser {
 		//System.out.println("func-->returned " + tempSymbol.toString());
 		expectRetrieve(Token.Kind.OPEN_PAREN);
 		have(NonTerminal.PARAMETER_LIST); // changed from expect to have
+		enterScope();
 		parameterList();
 		expectRetrieve(Token.Kind.CLOSE_PAREN);
 		expectRetrieve(Token.Kind.COLON);
