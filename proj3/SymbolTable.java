@@ -96,7 +96,6 @@ public class SymbolTable {
     	Symbol tempSym = new Symbol(name);
     	this.symTable.add(tempSym);
     	return tempSym;
-    	
     }
     
     public String toString()
