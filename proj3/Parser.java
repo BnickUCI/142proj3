@@ -15,6 +15,10 @@ public class Parser {
     private SymbolTable head; 
     private SymbolTable currentSymTable;
     
+    // Semantic overhead
+    private Token tempToken;
+    private Symbol tempSymbol;
+    
     
     private void initSymbolTable()
     {
@@ -33,6 +37,8 @@ public class Parser {
     	recursiveCounter++;
     	// now add it to the list 
     	tempSymTable.setParent(currentSymTable);
+    	System.out.println(" Enter test currentSymTable : " + currentSymTable.toString());
+    	System.out.println("recursiveCounter: " + recursiveCounter);
     	currentSymTable = tempSymTable;
     }
     
@@ -40,8 +46,12 @@ public class Parser {
     {
         // just need to move to the next node up the list
     	// so follow parent node
+    	System.out.println("Exit test currentSymTable : " + currentSymTable.toString());
+    	System.out.println("recursiveCounter: " + recursiveCounter);
     	currentSymTable = currentSymTable.getParent(); 
+    	
     	// I think garbage collection picks up the left behind node
+    	
     }
 
     private Symbol tryResolveSymbol(Token ident)
@@ -126,6 +136,11 @@ public class Parser {
 		recursiveCounter = 0;
 		this.scanner = scanner;
 		currentToken = scanner.getNextToken();
+		
+		// Sematic check Overhead
+		tempToken = null;// may screw things up. 
+		tempSymbol = null;
+		
 	}// end of "Parser"
 	// ==========================================================================================================
 	private StringBuffer errorBuffer = new StringBuffer();
@@ -249,7 +264,7 @@ public class Parser {
 		if(have(NonTerminal.DECLARATION_LIST)){
 			declarationList();
 		}
-		expect(Token.Kind.EOF);
+		expectRetrieve(Token.Kind.EOF);
     }
     
 
@@ -258,16 +273,16 @@ public class Parser {
 	public void literal()
 	{
 		if(have(Token.Kind.INTEGER)){
-			expect(Token.Kind.INTEGER);
+			expectRetrieve(Token.Kind.INTEGER);
 		}
 		else if(have(Token.Kind.FLOAT)){
-			expect(Token.Kind.FLOAT);
+			expectRetrieve(Token.Kind.FLOAT);
 		}
 		else if(have(Token.Kind.TRUE)){
-			expect(Token.Kind.TRUE);
+			expectRetrieve(Token.Kind.TRUE);
 		}
 		else if(have(Token.Kind.FALSE)){
-			expect(Token.Kind.FALSE);
+			expectRetrieve(Token.Kind.FALSE);
 		}
 		else
 			System.out.println("Something wrong in the literal class");
@@ -278,11 +293,16 @@ public class Parser {
 	// -------------------------------------------------------------------
 	public void designator()
 	{
-		expect(Token.Kind.IDENTIFIER);
+		// This is a test, not sure if this will work. Checks for
+		// redefinition 
+		tempToken = expectRetrieve(Token.Kind.IDENTIFIER);
+		tempSymbol = tryResolveSymbol(tempToken); 
+		//System.out.println("designator-->returned " + tempSymbol.toString());
+		
 		while (accept(Token.Kind.OPEN_BRACKET)) {
 			have(NonTerminal.EXPRESSION0);
 			expression0();
-			expect(Token.Kind.CLOSE_BRACKET);
+			expectRetrieve(Token.Kind.CLOSE_BRACKET);
 		}
 	}
 	
@@ -291,7 +311,9 @@ public class Parser {
 	// -------------------------------------------------------------------
 	public void type()
 	{
-		expect(Token.Kind.IDENTIFIER);
+		tempToken = expectRetrieve(Token.Kind.IDENTIFIER);
+		//tempSymbol = tryResolveSymbol(tempToken); 
+		//System.out.println("designator-->returned " + tempSymbol.toString());
 	}
 	
 	
@@ -300,17 +322,17 @@ public class Parser {
 	public void op0()
 	{
 		if(have(Token.Kind.GREATER_EQUAL))
-			expect(Token.Kind.GREATER_EQUAL);
+			expectRetrieve(Token.Kind.GREATER_EQUAL);
 		else if(have(Token.Kind.LESSER_EQUAL))
-			expect(Token.Kind.LESSER_EQUAL);
+			expectRetrieve(Token.Kind.LESSER_EQUAL);
 		else if(have(Token.Kind.NOT_EQUAL))
-			expect(Token.Kind.NOT_EQUAL);
+			expectRetrieve(Token.Kind.NOT_EQUAL);
 		else if(have(Token.Kind.EQUAL))
 			expect(Token.Kind.EQUAL);
 		else if(have(Token.Kind.GREATER_THAN))
-			expect(Token.Kind.GREATER_THAN);
+			expectRetrieve(Token.Kind.GREATER_THAN);
 		else if(have(Token.Kind.LESS_THAN))
-			expect(Token.Kind.LESS_THAN);
+			expectRetrieve(Token.Kind.LESS_THAN);
 		else
 			System.out.println("Something wrong in op0");
 	}
@@ -321,13 +343,13 @@ public class Parser {
 	public void op1()
 	{
 		if(have(Token.Kind.ADD)){
-			expect(Token.Kind.ADD);
+			expectRetrieve(Token.Kind.ADD);
 		}
 		else if(have(Token.Kind.SUB)){
-			expect(Token.Kind.SUB);
+			expectRetrieve(Token.Kind.SUB);
 		}
 		if(have(Token.Kind.OR)){
-			expect(Token.Kind.OR);
+			expectRetrieve(Token.Kind.OR);
 		}
 	}
 	
@@ -336,13 +358,13 @@ public class Parser {
 	public void op2()
 	{
 		if(have(Token.Kind.MUL)){
-			expect(Token.Kind.MUL);
+			expectRetrieve(Token.Kind.MUL);
 		}
 		else if(have(Token.Kind.DIV)){
-			expect(Token.Kind.DIV);
+			expectRetrieve(Token.Kind.DIV);
 		}
 		if(have(Token.Kind.AND)){
-			expect(Token.Kind.AND);
+			expectRetrieve(Token.Kind.AND);
 		}
 	}
 	
@@ -394,15 +416,15 @@ public class Parser {
 	public void expression3() {
 		
 		if(have(Token.Kind.NOT)){
-			expect(Token.Kind.NOT);
+			expectRetrieve(Token.Kind.NOT);
 			have(NonTerminal.EXPRESSION3); 
 			expression3();
 		}
 		else if(have(Token.Kind.OPEN_PAREN)){
-			expect(Token.Kind.OPEN_PAREN);
+			expectRetrieve(Token.Kind.OPEN_PAREN);
 			have(NonTerminal.EXPRESSION0);
 			expression0();
-			expect(Token.Kind.CLOSE_PAREN);
+			expectRetrieve(Token.Kind.CLOSE_PAREN);
 		}
 		else if(have(NonTerminal.DESIGNATOR)){
 			
@@ -424,12 +446,15 @@ public class Parser {
 	// call-expression := "::" IDENTIFIER "(" expression-list ")". 
 	// -------------------------------------------------------------------
 	public void callExpression() {
-		expect(Token.Kind.CALL); 
-		expect(Token.Kind.IDENTIFIER);
-		expect(Token.Kind.OPEN_PAREN);
+		expectRetrieve(Token.Kind.CALL); 
+		tempToken = expectRetrieve(Token.Kind.IDENTIFIER);
+		tempSymbol = tryResolveSymbol(tempToken); 
+		//System.out.println("callExpression-->returned " + tempSymbol.toString());
+		
+		expectRetrieve(Token.Kind.OPEN_PAREN);
 		have(NonTerminal.EXPRESSION_LIST);
 		expressionList();
-		expect(Token.Kind.CLOSE_PAREN);
+		expectRetrieve(Token.Kind.CLOSE_PAREN);
 	}
 	
 	
@@ -451,8 +476,11 @@ public class Parser {
 	// parameter := IDENTIFIER ":" type 
 	// -------------------------------------------------------------------
 	public void parameter() {
-		expect(Token.Kind.IDENTIFIER);
-		expect(Token.Kind.COLON);
+		tempToken = expectRetrieve(Token.Kind.IDENTIFIER);
+		//tempSymbol = tryResolveSymbol(tempToken);  // original
+		tempSymbol = tryDeclareSymbol(tempToken);
+		//System.out.println("parameter-->returned " + tempSymbol.toString());
+		expectRetrieve(Token.Kind.COLON);
 		have(NonTerminal.TYPE);
 		type();
 	}
@@ -474,51 +502,59 @@ public class Parser {
 	// variable-declaration := "var" IDENTIFIER ":" type ";"
 	// -------------------------------------------------------------------
 	public void variableDeclaration(){
-		expect(Token.Kind.VAR);
-		expect(Token.Kind.IDENTIFIER);
-		expect(Token.Kind.COLON);
+		expectRetrieve(Token.Kind.VAR);
+		tempToken = expectRetrieve(Token.Kind.IDENTIFIER);
+		tempSymbol = tryDeclareSymbol(tempToken); 
+		//System.out.println("variableDeclaration-->returned " + tempSymbol.toString());
+		expectRetrieve(Token.Kind.COLON);
 		have(NonTerminal.TYPE);
 		type();
-		expect(Token.Kind.SEMICOLON);
+		expectRetrieve(Token.Kind.SEMICOLON);
 	}
 	
 	// array-declaration := "array" IDENTIFIER ":" type ";"
 	// -------------------------------------------------------------------
 	public void arrayDeclaration() {
 
-		expect(Token.Kind.ARRAY);
-		expect(Token.Kind.IDENTIFIER);
-		expect(Token.Kind.COLON);
+		expectRetrieve(Token.Kind.ARRAY);
+		tempToken = expectRetrieve(Token.Kind.IDENTIFIER);
+		tempSymbol = tryResolveSymbol(tempToken); 
+		//System.out.println("designator-->returned " + tempSymbol.toString());
+		expectRetrieve(Token.Kind.COLON);
 		have(NonTerminal.TYPE);
 		type();
-		expect(Token.Kind.OPEN_BRACKET);
-		expect(Token.Kind.INTEGER);
-		expect(Token.Kind.CLOSE_BRACKET);
+		expectRetrieve(Token.Kind.OPEN_BRACKET);
+		expectRetrieve(Token.Kind.INTEGER);
+		expectRetrieve(Token.Kind.CLOSE_BRACKET);
 		
 		while(accept(Token.Kind.OPEN_BRACKET)){
-			expect(Token.Kind.INTEGER);
-			expect(Token.Kind.CLOSE_BRACKET);
+			expectRetrieve(Token.Kind.INTEGER);
+			expectRetrieve(Token.Kind.CLOSE_BRACKET);
 		}
 		
-		expect(Token.Kind.SEMICOLON);
+		expectRetrieve(Token.Kind.SEMICOLON);
 	}
 	
 	// function-definition := "func" IDENTIFIER "(" parameter-list ")"
 	//									":" type statement-block .
 	// -------------------------------------------------------------------
 	public void functionDefinition() {
-		expect(Token.Kind.FUNC);
-		expect(Token.Kind.IDENTIFIER);
-		expect(Token.Kind.OPEN_PAREN);
+		expectRetrieve(Token.Kind.FUNC);
+		enterScope(); // experimental positioning
+		tempToken = expectRetrieve(Token.Kind.IDENTIFIER);
+		tempSymbol = tryDeclareSymbol(tempToken); 
+		//System.out.println("func-->returned " + tempSymbol.toString());
+		expectRetrieve(Token.Kind.OPEN_PAREN);
 		have(NonTerminal.PARAMETER_LIST); // changed from expect to have
 		parameterList();
-		expect(Token.Kind.CLOSE_PAREN);
-		expect(Token.Kind.COLON);
+		expectRetrieve(Token.Kind.CLOSE_PAREN);
+		expectRetrieve(Token.Kind.COLON);
 		have(NonTerminal.TYPE);
 		type();
 		//expect(NonTerminal.STATEMENT_BLOCK); // original
 		have(NonTerminal.STATEMENT_BLOCK);
 		statementBlock();
+		exitScope();
 	}
 	
 	// declaration := variable-declaration | array-declaration | function-definition
@@ -554,13 +590,13 @@ public class Parser {
 	// assignment-statement := "let" designator "=" expression0 ";"
 	// -------------------------------------------------------------------
 	public void assignmentStatement() {
-		expect(Token.Kind.LET);
+		expectRetrieve(Token.Kind.LET);
 		have(NonTerminal.DESIGNATOR);
 		designator();
-		expect(Token.Kind.ASSIGN);
+		expectRetrieve(Token.Kind.ASSIGN);
 		have(NonTerminal.EXPRESSION0);
 		expression0();
-		expect(Token.Kind.SEMICOLON);
+		expectRetrieve(Token.Kind.SEMICOLON);
 	}
 	
 	// call-statement := call-expression ";"
@@ -568,21 +604,24 @@ public class Parser {
 	public void callStatement() {
 		have(NonTerminal.CALL_EXPRESSION);
 		callExpression();
-		expect(Token.Kind.SEMICOLON);
+		expectRetrieve(Token.Kind.SEMICOLON);
 	}
 	// if-statement := "if" expression0 statement-block ["else" statement-block ].
 	// -------------------------------------------------------------------
 	public void ifStatement() {
-		expect(Token.Kind.IF);
+		expectRetrieve(Token.Kind.IF);
 		have(NonTerminal.EXPRESSION0);
 		expression0();
 		have(NonTerminal.STATEMENT_BLOCK);
+		enterScope(); // testing
 		statementBlock();
-		
+		exitScope(); // testing 
 		if(have(Token.Kind.ELSE)){
-			expect(Token.Kind.ELSE);
+			expectRetrieve(Token.Kind.ELSE);
 			have(NonTerminal.STATEMENT_BLOCK);
+			enterScope(); // testing
 			statementBlock();
+			exitScope(); // testing
 		}
 	}
 	
@@ -590,11 +629,13 @@ public class Parser {
 	// while-statement := "while" expression0 statement-block .
 	// -------------------------------------------------------------------
 	public void whileStatement() {
-		expect(Token.Kind.WHILE);
+		expectRetrieve(Token.Kind.WHILE);
 		have(NonTerminal.EXPRESSION0);
 		expression0();
 		have(NonTerminal.STATEMENT_BLOCK);
+		enterScope();
 		statementBlock();
+		exitScope();
 	}
 	
 	
@@ -602,13 +643,12 @@ public class Parser {
 	// return-statement := "return" expression0 ";" . 
 	// -------------------------------------------------------------------
 	public void returnStatement() {
-		expect(Token.Kind.RETURN);
+		expectRetrieve(Token.Kind.RETURN);
 		have(NonTerminal.EXPRESSION0);
 		expression0();
-		expect(Token.Kind.SEMICOLON);
+		expectRetrieve(Token.Kind.SEMICOLON);
 	}
-	
-	
+
 	
 	// statement := variable-declaration | call-statement | assignment-statement| 
 	//					if-statement | while-statement| return-statement .
@@ -654,13 +694,11 @@ public class Parser {
 	// -------------------------------------------------------------------
 	public void statementBlock() {	
 		//if we are here we are in a new scope
-		enterScope();
-		expect(Token.Kind.OPEN_BRACE);
+		//enterScope(); Wrong spot maybe
+		expectRetrieve(Token.Kind.OPEN_BRACE);
 		have(NonTerminal.STATEMENT_LIST);
 		statementList();
-		expect(Token.Kind.CLOSE_BRACE);
-		exitScope();
+		expectRetrieve(Token.Kind.CLOSE_BRACE);
+		//exitScope(); Wrong spot maybe
 	}
-    
-    
 }

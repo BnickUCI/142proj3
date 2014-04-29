@@ -6,8 +6,8 @@ import java.io.PrintStream;
 
 public class Compiler {
     public static String studentName = "Nicholas Bennett";
-    public static String studentID = "TODO: 76237804";
-    public static String uciNetID = "TODO: nrbennet";
+    public static String studentID = "76237804";
+    public static String uciNetID = "nrbennet";
     
     public static void main(String[] args)
     {
