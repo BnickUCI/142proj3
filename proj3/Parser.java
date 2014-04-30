@@ -1,5 +1,8 @@
 package crux;
 
+// debug run configurations
+//C:\Users\Nick\Desktop\CS_142_Compilers\CS142_Lab3\tests\tests\test04.crx
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
@@ -65,7 +68,9 @@ public class Parser {
         assert(ident.is(Token.Kind.IDENTIFIER));
         String name = ident.lexeme();
         try {
-            return symbolTable.lookup(name);
+//        	// redo 
+//            return symbolTable.lookup(name);
+        	return currentSymTable.lookup(name);
         } catch (SymbolNotFoundError e) {
             String message = reportResolveSymbolError(name, ident.lineNumber(), ident.charPosition());
             return new ErrorSymbol(message);
@@ -76,7 +81,9 @@ public class Parser {
     {
         String message = "ResolveSymbolError(" + lineNum + "," + charPos + ")[Could not find " + name + ".]";
         errorBuffer.append(message + "\n");
-        errorBuffer.append(symbolTable.toString() + "\n");
+        // original
+        //errorBuffer.append(symbolTable.toString() + "\n");
+        errorBuffer.append(currentSymTable.toString() + "\n");
         return message;
     }
 
@@ -96,7 +103,7 @@ public class Parser {
     {
         String message = "DeclareSymbolError(" + lineNum + "," + charPos + ")[" + name + " already exists.]";
         errorBuffer.append(message + "\n");
-        errorBuffer.append(symbolTable.toString() + "\n");
+        errorBuffer.append(currentSymTable.toString() + "\n");
         return message;
     }    
 
